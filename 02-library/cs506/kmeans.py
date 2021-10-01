@@ -5,13 +5,15 @@ import csv
 
 
 def point_avg(points):
-    """
-    Accepts a list of points, each with the same number of dimensions.
-    (points can have more dimensions than 2)
+    num_points = len(points)
+    holder = [0]*len(points[0])
+    for x in points:
+        for j in range(len(x)):
+            holder[j] += x[j]
     
-    Returns a new point which is the center of all the points.
-    """
-    raise NotImplementedError()
+    for sums in holder:
+        sums = sums / num_points
+    return holder
 
 
 def update_centers(dataset, assignments):
@@ -21,7 +23,19 @@ def update_centers(dataset, assignments):
     Compute the center for each of the assigned groups.
     Return `k` centers in a list
     """
-    raise NotImplementedError()
+    assign_set = set(assignments)
+    k = len(assign_set)
+    #print(k)
+    centers = []
+    for team in assign_set:
+        temp_holder = []
+        for i in range(len(dataset)):
+            if (assignments[i] == team):
+                temp_holder.append(dataset[i])
+
+        centers.append(point_avg(temp_holder))  
+    #print(k, len(centers))      
+    return centers
 
 def assign_points(data_points, centers):
     """
@@ -36,6 +50,7 @@ def assign_points(data_points, centers):
                 shortest = val
                 shortest_index = i
         assignments.append(shortest_index)
+    #print(set(assignments), len(centers))     
     return assignments
 
 
@@ -43,20 +58,38 @@ def distance(a, b):
     """
     Returns the Euclidean distance between a and b
     """
-    raise NotImplementedError()
+    res = 0
+    for i in range(len(a)):
+        res += (a[i] - b[i])**2
+    return res**(1/2)
 
 def distance_squared(a, b):
-    raise NotImplementedError()
+    return distance(a, b)**2
 
 def generate_k(dataset, k):
     """
     Given `data_set`, which is an array of arrays,
     return a random set of k points from the data_set
     """
-    raise NotImplementedError()
+    init_p = []
+    pindex = []
+    while (len(pindex) < k):
+        ind = random.randint(0,len(dataset) - 1)
+        if(ind not in pindex):
+            pindex.append(ind)
+            init_p.append(dataset[ind])
+    print(k, len(init_p))
+    print(init_p)       
+    return init_p
 
 def cost_function(clustering):
-    raise NotImplementedError()
+    cost_sum = 0
+    k = len(clustering)
+    for i in range(k):
+        center = point_avg(clustering[i])
+        for points in clustering[i]:
+            cost_sum += distance_squared(points, center)
+    return cost_sum
 
 
 def generate_k_pp(dataset, k):
@@ -66,7 +99,31 @@ def generate_k_pp(dataset, k):
     where points are picked with a probability proportional
     to their distance as per kmeans pp
     """
-    raise NotImplementedError()
+    init_p = []
+    pindex = []
+    pdf = []
+    ind = random.randint(0,len(dataset) - 1)
+    if(ind not in pindex):
+        pindex.append(ind)
+        init_p.append(dataset[ind])
+    for i in range(len(dataset)):
+        d2 = distance_squared(dataset[i], init_p[0])
+        if i == 0:
+            pdf.append(d2)
+        else:
+            pdf.append(d2 + pdf[i-1])
+    cdf = [x/pdf[len(dataset) - 1] for x in pdf]
+
+    while (len(pindex) < (k-1)):
+        tp = random.random()
+        ind = 0
+        while(tp > cdf[ind]):
+            ind += 1
+        if(ind not in pindex):
+            pindex.append(ind)
+            init_p.append(dataset[ind])
+
+    return init_p
 
 
 def _do_lloyds_algo(dataset, k_points):
